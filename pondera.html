@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método AHP - Módulos 1, 2, 3 e 4 (Média Aritmética)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        .criteria-input {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .criteria-input input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            padding: 8px 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        .slider-container {
+            margin-top: 10px;
+        }
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .slider-label {
+            font-weight: bold;
+            margin-right: 10px;
+            flex: 1;
+        }
+        .selector {
+            padding: 4px;
+            font-size: 1rem;
+        }
+        .matrix {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .matrix th, .matrix td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .consistency-result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: red;
+            text-align: center;
+        }
+        .weights-container {
+            margin-top: 20px;
+            font-weight: bold;
+            color: blue;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Método AHP - Módulos 1, 2, 3 e 4</h2>
+        
+        <!-- Módulo 1: Adição de Critérios -->
+        <div id="criteria-container">
+            <div class="criteria-input">
+                <input type="text" placeholder="Critério 1" value="Critério 1">
+            </div>
+            <div class="criteria-input">
+                <input type="text" placeholder="Critério 2" value="Critério 2">
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="addCriteria()">Inserir Novo Critério</button>
+            <button onclick="removeCriteria()">Excluir Critério</button>
+        </div>
+
+        <!-- Módulo 2: Comparação dos Critérios -->
+        <div id="slider-container" class="slider-container"></div>
+        <table id="criteria-matrix" class="matrix"></table>
+
+        <!-- Módulo 3: Análise de Consistência -->
+        <button onclick="checkConsistency()">Análise de Consistência</button>
+        <div id="consistency-result" class="consistency-result"></div>
+
+        <!-- Módulo 4: Cálculo dos Pesos -->
+        <div id="weights-container" class="weights-container"></div>
+    </div>
+
+    <script>
+        let criteriaCount = 2;
+        let matrixValues = [[1, 1], [1, 1]];
+
+        const comparisonValues = [
+            { label: "1/9", value: 1/9 },
+            { label: "1/8", value: 1/8 },
+            { label: "1/7", value: 1/7 },
+            { label: "1/6", value: 1/6 },
+            { label: "1/5", value: 1/5 },
+            { label: "1/4", value: 1/4 },
+            { label: "1/3", value: 1/3 },
+            { label: "1/2", value: 1/2 },
+            { label: "1", value: 1 },
+            { label: "2", value: 2 },
+            { label: "3", value: 3 },
+            { label: "4", value: 4 },
+            { label: "5", value: 5 },
+            { label: "6", value: 6 },
+            { label: "7", value: 7 },
+            { label: "8", value: 8 },
+            { label: "9", value: 9 }
+        ];
+
+        function addCriteria() {
+            criteriaCount++;
+            matrixValues.forEach(row => row.push(1));
+            matrixValues.push(Array(criteriaCount).fill(1));
+
+            const criteriaContainer = document.getElementById("criteria-container");
+            const newCriteria = document.createElement("div");
+            newCriteria.classList.add("criteria-input");
+            newCriteria.innerHTML = `<input type="text" placeholder="Critério ${criteriaCount}" value="Critério ${criteriaCount}">`;
+            criteriaContainer.appendChild(newCriteria);
+
+            createSelectors();
+            updateMatrixTable();
+        }
+
+        function removeCriteria() {
+            if (criteriaCount > 2) {
+                criteriaCount--;
+                matrixValues.pop();
+                matrixValues.forEach(row => row.pop());
+
+                const criteriaContainer = document.getElementById("criteria-container");
+                criteriaContainer.removeChild(criteriaContainer.lastElementChild);
+
+                createSelectors();
+                updateMatrixTable();
+            }
+        }
+
+        function updateMatrixTable() {
+            const criteriaInputs = document.querySelectorAll('#criteria-container .criteria-input input');
+            const criteriaNames = Array.from(criteriaInputs).map(input => input.value);
+            const matrixTable = document.getElementById("criteria-matrix");
+            matrixTable.innerHTML = "";
+
+            const headerRow = document.createElement("tr");
+            criteriaNames.forEach(name => {
+                const th = document.createElement("th");
+                th.textContent = name;
+                headerRow.appendChild(th);
+            });
+            matrixTable.appendChild(headerRow);
+
+            matrixValues.forEach((row, i) => {
+                const tr = document.createElement("tr");
+                row.forEach(value => {
+                    const td = document.createElement("td");
+                    td.textContent = value.toFixed(2);
+                    tr.appendChild(td);
+                });
+                matrixTable.appendChild(tr);
+            });
+        }
+
+        function createSelectors() {
+            const sliderContainer = document.getElementById("slider-container");
+            sliderContainer.innerHTML = "";
+
+            for (let i = 0; i < criteriaCount; i++) {
+                for (let j = i + 1; j < criteriaCount; j++) {
+                    const selectorWrapper = document.createElement("div");
+                    selectorWrapper.classList.add("slider-wrapper");
+
+                    const label = document.createElement("div");
+                    label.classList.add("slider-label");
+                    label.textContent = `O quanto Critério ${i + 1} é preferível em relação ao Critério ${j + 1}:`;
+
+                    const select = document.createElement("select");
+                    select.classList.add("selector");
+                    comparisonValues.forEach(option => {
+                        const opt = document.createElement("option");
+                        opt.value = option.value;
+                        opt.textContent = option.label;
+                        select.appendChild(opt);
+                    });
+
+                    select.addEventListener("change", function () {
+                        const value = parseFloat(select.value);
+                        matrixValues[i][j] = value;
+                        matrixValues[j][i] = 1 / value;
+                        updateMatrixTable();
+                    });
+
+                    selectorWrapper.appendChild(label);
+                    selectorWrapper.appendChild(select);
+                    sliderContainer.appendChild(selectorWrapper);
+                }
+            }
+        }
+
+        function checkConsistency() {
+            const priorityVector = matrixValues.map(row => 
+                Math.pow(row.reduce((a, b) => a * b), 1 / criteriaCount)
+            );
+            const sumPriority = priorityVector.reduce((a, b) => a + b);
+            const normalizedVector = priorityVector.map(val => val / sumPriority);
+
+            const weightedSumVector = matrixValues.map((row, i) => 
+                row.reduce((sum, val, j) => sum + val * normalizedVector[j], 0)
+            );
+
+            const lambdaMax = weightedSumVector.reduce((sum, val, i) => sum + val / normalizedVector[i], 0) / criteriaCount;
+            const IC = (lambdaMax - criteriaCount) / (criteriaCount - 1);
+            const IA = [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45][criteriaCount - 1] || 1.45;
+            const ICR = IC / IA;
+
+            const resultContainer = document.getElementById("consistency-result");
+            if (ICR < 0.1) {
+                resultContainer.textContent = `A matriz é consistente (ICR = ${ICR.toFixed(2)}).`;
+                resultContainer.style.color = "green";
+                calculateWeightsArithmetic();
+            } else {
+                resultContainer.textContent = `A matriz é inconsistente (ICR = ${ICR.toFixed(2)}). Reavalie as preferências.`;
+                resultContainer.style.color = "red";
+            }
+        }
+
+        function calculateWeightsArithmetic() {
+            const colSum = Array(criteriaCount).fill(0);
+            matrixValues.forEach(row => row.forEach((val, colIndex) => colSum[colIndex] += val));
+
+            const normalizedMatrix = matrixValues.map(row =>
+                row.map((val, colIndex) => val / colSum[colIndex])
+            );
+
+            const weights = normalizedMatrix.map(row => 
+                row.reduce((sum, val) => sum + val, 0) / criteriaCount
+            );
+
+            const criteriaInputs = document.querySelectorAll('#criteria-container .criteria-input input');
+            const criteriaNames = Array.from(criteriaInputs).map(input => input.value);
+
+            let weightsOutput = "Pesos dos Critérios (Média Aritmética):<br>";
+            weights.forEach((weight, index) => {
+                weightsOutput += `${criteriaNames[index]}: ${(weight * 100).toFixed(2)}%<br>`;
+            });
+
+            const weightsContainer = document.getElementById("weights-container");
+            weightsContainer.innerHTML = weightsOutput;
+            weightsContainer.style.color = "blue";
+        }
+
+        createSelectors();
+        updateMatrixTable();
+    </script>
+</body>
+</html>
